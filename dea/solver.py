@@ -4,25 +4,36 @@ from scipy.optimize import linprog
 
 
 class DEA:
-    # def __ini__(self, csv_file:pd.DataFrame, input_cols:list, output_cols:list, header:bool=True)->None:
-    def __init__(self,
-                 input_array:np.ndarray,
-                 output_array:np.ndarray)->None:
-        self.x_in = input_array
-        self.x_out = output_array
+    def __init__(self, csv_file:pd.DataFrame, input_cols:tuple,
+               output_cols:tuple, header:bool=True)->None:
         
+        # Complete dataset 
+        self.datas = csv_file
+
+        # Dataframe columns 
+        self.datas_in=csv_file.iloc[:, input_cols[0]: input_cols[1]]
+        self.datas_out=csv_file.iloc[:, output_cols[0]: output_cols[1]]
+    
+        # Array columns
+        self.x_in = self.datas_in.values
+        self.x_out = self.datas_out.values
+        
+        # Atributes extractions
         self.DMU_size = len(self.x_in)
         self.input_size = self.x_in.shape[1]
         self.output_size = self.x_out.shape[1]
         self.attr_size = self.input_size+self.output_size
         
-        self.datas = np.concatenate((self.x_in, self.x_out,), axis=1)
-
+      
+    # Visualize input data
     def show_inputs(self)->pd.DataFrame:
-        pass
+        return self.datas_in
 
+
+    # Visualize output data
     def show_outputs(self)->pd.DataFrame:
-        pass
+        return self.datas_out
+
 
     # Normalize datas 
     def normalize(self)->np.ndarray:
@@ -41,10 +52,12 @@ class DEA:
                     )))
         return norm_x_in, norm_x_out
 
-        
+
+
+# Dea CCR model class      
 class DEA_CCR(DEA):
-    def __init__(self, input_array, output_array):
-        super().__init__(input_array, output_array)
+    def __init__(self, csv_file, input_cols, output_cols, header = True):
+        super().__init__(csv_file, input_cols, output_cols, header)
 
     # Solve the problem 
     def solve(self, normalize=True)->np.ndarray:
@@ -74,19 +87,45 @@ class DEA_CCR(DEA):
 
             score.append(round(res.fun,4))
 
-        score = np.array([score]).T
-        score = np.round(1/score,4)
-        return np.concatenate((self.x_in,self.x_out, score), axis=1)
+        # score = np.array([score]).T
+        # score = np.round(1/score,4)
+        # return np.concatenate((self.x_in,self.x_out, score), axis=1)
+        return pd.DataFrame(data=score, columns=['score'])
+    
+
+    # Rank the DMUS
+    def rank(self, sort='no'):
+        score = self.solve()
+        ranks = self.datas.join(1/score)
+
+        if sort.lower() == 'no':
+            return ranks
+        elif sort.lower() in ['ascending', 'asc']:
+            return ranks.sort_values(by='score', ascending=True)
+        elif sort.lower() in ['descending', 'desc']:
+            return ranks.sort_values(by='score', ascending=False)
+        else:
+            return "Unknown sort method. Please choose between 'no', 'asc', and 'desc'"
+
 
   
 
-
+# Dea BCC model class 
 class DEA_BCC(DEA):
-    def __init__(self, input_array, output_array):
-        super().__init__(input_array, output_array)
+    def __init__(self, csv_file, input_cols, output_cols, header = True):
+        super().__init__(csv_file, input_cols, output_cols, header)
 
-# Solve the problem 
+    # Solve the problem 
     def solve(self, normalize=True)->np.ndarray:
-        
-        return "BCC model not implemented yet in this version."
+        if normalize==True:
+            data_input, data_output = self.normalize()
+        else:
+            data_input, data_output = self.x_in, self.x_out
+
+        return "BCC model is not implemented in this version yet."
+    
+
+    # Rank the DMUS
+    def rank(self, sort='no'):
+        return "BCC model is not implemented in this version yet."
     

@@ -1,5 +1,5 @@
 # DEA-Solver
-Software to evaluate the efficiency of a group of similar decisions making units DMUs. 
+Software to evaluate the efficiency of a group of similar decisions making units (DMUs). 
 
 ```python
 import pandas as pd
